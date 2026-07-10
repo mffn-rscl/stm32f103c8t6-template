@@ -34,7 +34,7 @@ LDR   r1, =_sbss
 LDR   r2, =_ebss
 B     reset_bss_loop
 
-eset_bss:
+reset_bss:
     STR   r0, [r1]
     ADDS  r1, r1, #4
 
