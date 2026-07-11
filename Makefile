@@ -1,10 +1,11 @@
 TARGET = main
 
-# Define the linker script location and chip architecture.
+BUILD_DIR = build
+SRC_DIR = src
+
 LD_SCRIPT = STM32F103C8T6.ld
 MCU_SPEC  = cortex-m3
 
-# Toolchain definitions (ARM bare metal defaults)
 TOOLCHAIN = /usr
 CC = $(TOOLCHAIN)/bin/arm-none-eabi-gcc
 AS = $(TOOLCHAIN)/bin/arm-none-eabi-as
@@ -13,26 +14,23 @@ OC = $(TOOLCHAIN)/bin/arm-none-eabi-objcopy
 OD = $(TOOLCHAIN)/bin/arm-none-eabi-objdump
 OS = $(TOOLCHAIN)/bin/arm-none-eabi-size
 
-# Assembly directives.
+INCLUDE = -ICMSIS/Device -ICMSIS/Include
+
 ASFLAGS += -c
 ASFLAGS += -O0
 ASFLAGS += -mcpu=$(MCU_SPEC)
 ASFLAGS += -mthumb
 ASFLAGS += -Wall
-# (Set error messages to appear on a single line.)
 ASFLAGS += -fmessage-length=0
 
-# C compilation directives
+
 CFLAGS += -mcpu=$(MCU_SPEC)
 CFLAGS += -mthumb
 CFLAGS += -Wall
 CFLAGS += -g
-# (Set error messages to appear on a single line.)
 CFLAGS += -fmessage-length=0
-# (Set system to ignore semihosted junk)
 CFLAGS += --specs=nosys.specs
 
-# Linker directives.
 LSCRIPT = ./$(LD_SCRIPT)
 LFLAGS += -mcpu=$(MCU_SPEC)
 LFLAGS += -mthumb
@@ -42,31 +40,35 @@ LFLAGS += -nostdlib
 LFLAGS += -lgcc
 LFLAGS += -T$(LSCRIPT)
 
-AS_SRC   =  ./core.S
-AS_SRC   += ./vector_table.S
-C_SRC    =  ./main.c
+AS_SRC   = $(SRC_DIR)/core.S
+AS_SRC  += $(SRC_DIR)/vector_table.S
+C_SRC    = $(SRC_DIR)/main.c
 
-OBJS  = $(AS_SRC:.S=.o)
-OBJS += $(C_SRC:.c=.o)
+OBJS  = $(AS_SRC:$(SRC_DIR)/%.S=$(BUILD_DIR)/%.o)
+OBJS += $(C_SRC:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
-.PHONY: all
-all: $(TARGET).bin
+ELF = $(BUILD_DIR)/$(TARGET).elf
+BIN = $(BUILD_DIR)/$(TARGET).bin
 
-%.o: %.S
+.PHONY: all clean
+
+all: $(BIN)
+
+$(BUILD_DIR):
+	mkdir -p $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.S | $(BUILD_DIR)
 	$(CC) -x assembler-with-cpp $(ASFLAGS) $< -o $@
 
-%.o: %.c
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) $(INCLUDE) $< -o $@
 
-$(TARGET).elf: $(OBJS)
+$(ELF): $(OBJS)
 	$(CC) $^ $(LFLAGS) -o $@
 
-$(TARGET).bin: $(TARGET).elf
+$(BIN): $(ELF)
 	$(OC) -S -O binary $< $@
 	$(OS) $<
 
-.PHONY: clean
 clean:
-	rm -f $(OBJS)
-	rm -f $(TARGET).elf
-	rm -f $(TARGET).bin
+	rm -rf $(BUILD_DIR)
