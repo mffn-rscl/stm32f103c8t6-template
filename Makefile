@@ -1,7 +1,8 @@
 TARGET = main
 
 BUILD_DIR = build
-SRC_DIR = src
+SRC_DIR = Src
+STARTUP_DIR = Startup
 
 LD_SCRIPT = STM32F103C8T6.ld
 MCU_SPEC  = cortex-m3
@@ -40,9 +41,10 @@ LFLAGS += -nostdlib
 LFLAGS += -lgcc
 LFLAGS += -T$(LSCRIPT)
 
-AS_SRC   = $(SRC_DIR)/core.S
-AS_SRC  += $(SRC_DIR)/vector_table.S
+AS_SRC   = $(STARTUP_DIR)/core.S
+AS_SRC  += $(STARTUP_DIR)/vector_table.S
 C_SRC    = $(SRC_DIR)/main.c
+
 
 OBJS  = $(AS_SRC:$(SRC_DIR)/%.S=$(BUILD_DIR)/%.o)
 OBJS += $(C_SRC:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -69,6 +71,9 @@ $(ELF): $(OBJS)
 $(BIN): $(ELF)
 	$(OC) -S -O binary $< $@
 	$(OS) $<
+
+asm: $(ELF)
+	$(OD) -S $< > $(BUILD_DIR)/$(TARGET).asm
 
 clean:
 	rm -rf $(BUILD_DIR)

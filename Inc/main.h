@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include "../CMSIS/Device/stm32f103xb.h"
 
-#define BUTTON_PIN (1)
-#define LED_PIN    (3)
+#include "i2c_driver.h"
+#include "rcc_conf.h"
+#include "ssd1306.h"
 
 #endif
